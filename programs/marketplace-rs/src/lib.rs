@@ -31,6 +31,18 @@ pub mod marketplace_rs {
         require!(fee <= 10000, MarketplaceError::InvalidFee); // Max fee is 100% (10000 basis points)
 
         // Call the implementation function
-        ctx.accounts.init(name, fee, &ctx.bumps)
+        ctx.accounts.init_mp(name, fee, &ctx.bumps)
+    }
+
+    pub fn list(ctx: Context<List>, price: u64) -> Result<()> {
+        // Call the implementation function
+        ctx.accounts.create_listing(price, &ctx.bumps)?;
+
+        ctx.accounts.deposit_nft()
+    }
+
+    pub fn purchase(ctx: Context<Purchase>) -> Result<()> {
+        // Call the implementation function
+        ctx.accounts.execute_purchase()
     }
 }

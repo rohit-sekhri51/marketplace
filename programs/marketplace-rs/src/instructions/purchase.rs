@@ -1,10 +1,9 @@
 use crate::state::{marketplace::Marketplace, listing::Listing};
 use anchor_lang::{prelude::*, system_program::{Transfer, transfer}};
 use anchor_spl::{
-    associated_token::AssociatedToken,
-    metadata::{MasterEditionAccount, Metadata, MetadataAccount},
-    token_interface::{transfer_checked, TransferChecked},
-    token_interface::{Mint, TokenAccount, TokenInterface},
+    associated_token::AssociatedToken, metadata::{MasterEditionAccount, Metadata, MetadataAccount}, 
+    token_interface::{close_account, CloseAccount}, 
+    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked}
 };
 
 /// # Purchase Instruction
@@ -183,5 +182,34 @@ impl<'info> Purchase<'info> {
         self.transfer_nft()?;
         
         Ok(())
+    }
+
+    pub fn close_mint_vault(&mut self) -> Result<()> {
+        // Close the mint vault account
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_accounts = CloseAccount {
+            account: self.vault.to_account_info(),
+            destination: self.maker.to_account_info(),
+            authority: self.listing.to_account_info(),
+        };
+
+        let mp_key = self.marketplace.key();
+        let mm_key = self.maker_mint.key();
+
+        let seeds = &[
+            mp_key.as_ref(),
+            mm_key.as_ref(),
+            &[self.listing.bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        let cpi_ctx = CpiContext::new_with_signer(
+            cpi_program, 
+            cpi_accounts, 
+            signer_seeds
+        );
+
+        // Execute the close account instruction
+        close_account(cpi_ctx)
     }
 }
